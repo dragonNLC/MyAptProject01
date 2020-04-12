@@ -1,0 +1,4 @@
+rootProject.name='MyAptProject-01'
+include ':app'
+include ':annotation'
+include ':processor'
