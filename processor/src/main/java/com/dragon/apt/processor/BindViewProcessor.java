@@ -22,6 +22,7 @@ public class BindViewProcessor extends AbstractProcessor {
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+        System.out.println("---init()---");
     }
 
     @Override
