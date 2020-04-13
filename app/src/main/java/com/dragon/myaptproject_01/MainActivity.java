@@ -6,7 +6,10 @@ import android.os.Bundle;
 import android.widget.TextView;
 
 import com.dragon.apt.annotation.BindView;
+import com.dragon.apt.annotation.Main;
 
+//编译时注解处理器不像反射，直接调用方法时无效的，需要生成对应的java文件才可以在运行时执行。
+@Main()
 public class MainActivity extends AppCompatActivity {
 
     @BindView(id = R.id.tv_content, onClick = true)
