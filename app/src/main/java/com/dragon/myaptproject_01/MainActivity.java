@@ -21,9 +21,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //tvContent.setText("修改内容");
-        CalculateFactory factory = new CalculateFactory();
-        Calculate c = factory.create("add");
-        c.operation(10, 20);
     }
 
 }

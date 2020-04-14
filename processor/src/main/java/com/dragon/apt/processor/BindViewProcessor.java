@@ -1,10 +1,14 @@
 package com.dragon.apt.processor;
 
 import com.dragon.apt.annotation.BindView;
+import com.dragon.apt.annotation.Factory;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.TypeSpec;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -34,6 +38,8 @@ public class BindViewProcessor extends AbstractProcessor {
     private Types types;//处理TypeMirror的工具类
     private Filer mFiler;// 用来创建文件
 
+    private Map<String, BindViewGroupClasses> bvGroupClasses;
+
     //遍历找到所有包含bindView的element
     //将所有找到的element与field判断，是否为field
     //如果是的，那么假如field在同一个文件中，则生成同一个文件，如果有多个，则生成多个文件
@@ -46,35 +52,49 @@ public class BindViewProcessor extends AbstractProcessor {
         mElements = processingEnv.getElementUtils();
         mFiler = processingEnv.getFiler();
         types = processingEnv.getTypeUtils();
+        bvGroupClasses = new HashMap<>();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Set<? extends Element> annotationElements = roundEnv.getElementsAnnotatedWith(BindView.class);//find use BindView's element
-
-        //创建类
-        /*TypeSpec hType = TypeSpec.classBuilder("HelloWorld")
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addMethod(methodSpec)
-                .addJavadoc("This class create from annotationProcessor!")
-                .build();*/
-
-        /*for (Element e :
+        for (Element e :
                 annotationElements) {
-                if (e.getKind() == ElementKind.FIELD) {//if element is Field element
-                    VariableElement typeElement = (VariableElement) e;//cast to variableElement
-                    //create a BindView file
-
-                    System.out.println("id = " + typeElement.getAnnotation(BindView.class).id());
-                    System.out.println("onClick = " + typeElement.getAnnotation(BindView.class).onClick());
+            GenerateTools.printer("e = " + e.getSimpleName());
+            GenerateTools.printer("e = " + e.getEnclosingElement().getEnclosingElement().getSimpleName());
+            if (e.getKind() != ElementKind.FIELD) {
+                GenerateTools.error(mMessager, e, "Only field can be annotated with @%s", BindView.class.getSimpleName());
+                return true;//输出错误信息
+            }
+            VariableElement variableElement = (VariableElement) e;
+            try {
+                BindViewClass bindViewClass = new BindViewClass(variableElement);
+                if (!isValidField(bindViewClass)) {
+                    return true;
                 }
-            }*/
-        Set<? extends Element> elements = roundEnv.getRootElements();
-        elements.forEach(o -> {
-            /*System.out.println("o = " + o.getSimpleName().toString());
-            System.out.println("o = " + o.getKind());
-            System.out.println("o = " + o.asType().toString());*/
-        });
+                BindViewGroupClasses groupClasses = bvGroupClasses.get(bindViewClass.getQualifiedSuperClassName());
+                if (groupClasses == null) {
+                    String qualifiedGroupName = bindViewClass.getQualifiedSuperClassName();
+                    groupClasses = new BindViewGroupClasses(qualifiedGroupName);
+                    bvGroupClasses.put(qualifiedGroupName, groupClasses);
+                }
+                groupClasses.add(bindViewClass);
+            } catch (IllegalArgumentException ex) {
+                GenerateTools.error(mMessager, variableElement, ex.getMessage());
+                return true;
+            }
+        }
+        try {
+            for (BindViewGroupClasses bgc :
+                    bvGroupClasses.values()) {
+                GenerateTools.printer("bgc = " + bgc.toString());
+                bgc.generateCode(mElements, mFiler);
+                GenerateTools.printer("bindViewClass = " + bgc.toString());
+            }
+        } catch (IOException ioe) {
+            GenerateTools.error(mMessager, null, ioe.getMessage());
+        }
+        bvGroupClasses.clear();
         return false;
     }
 
@@ -94,4 +114,20 @@ public class BindViewProcessor extends AbstractProcessor {
         annotations.add(BindView.class.getCanonicalName());
         return annotations;
     }
+
+    public boolean isValidField(BindViewClass bindViewClass) {
+        VariableElement variableElement = bindViewClass.getVarElement();
+        if (variableElement.getModifiers().contains(Modifier.PRIVATE)) {
+            GenerateTools.error(mMessager, variableElement, "The field may not has a private domain!");
+            return false;
+        }
+        /*TypeElement superClassElement = mElements.getTypeElement(bindViewClass.getQualifiedSuperClassName());
+        if (superClassElement.getKind() == ElementKind.INTERFACE) {
+            if (variableElement.asType().)
+        }*/
+        // TODO: 2020/4/14 check the field parent class.
+        return true;
+    }
+
 }
+

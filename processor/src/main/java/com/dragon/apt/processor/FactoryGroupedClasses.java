@@ -39,21 +39,6 @@ public class FactoryGroupedClasses {
         itemMap.put(toInsert.getId(), toInsert);
     }
 
-    public static class IDAlreadyUsedException extends RuntimeException {
-
-        private FactoryAnnotatedClass factoryAnnotatedClass;
-
-        public IDAlreadyUsedException(String s, FactoryAnnotatedClass factoryAnnotatedClass) {
-            super(s);
-            this.factoryAnnotatedClass = factoryAnnotatedClass;
-        }
-
-        public FactoryAnnotatedClass getExisting() {
-            return factoryAnnotatedClass;
-        }
-
-    }
-
     public void generateCode(Elements elementUtils, Filer filer) throws IOException {
         TypeElement superClassName = elementUtils.getTypeElement(qualifiedClassName);
         String factoryClassName = superClassName.getSimpleName() + SUFFIX;
@@ -82,6 +67,21 @@ public class FactoryGroupedClasses {
         JavaFile.builder(packageName, typeSpec).build().writeTo(filer);
 
         System.out.println("generateCode");
+    }
+
+    public static class IDAlreadyUsedException extends RuntimeException {
+
+        private FactoryAnnotatedClass factoryAnnotatedClass;
+
+        public IDAlreadyUsedException(String s, FactoryAnnotatedClass factoryAnnotatedClass) {
+            super(s);
+            this.factoryAnnotatedClass = factoryAnnotatedClass;
+        }
+
+        public FactoryAnnotatedClass getExisting() {
+            return factoryAnnotatedClass;
+        }
+
     }
 
 }

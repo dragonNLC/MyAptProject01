@@ -4,7 +4,6 @@ import com.dragon.apt.annotation.Factory;
 import com.google.auto.service.AutoService;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -28,7 +27,6 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 
 @SupportedAnnotationTypes("com.dragon.apt.annotation.Factory")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -59,7 +57,7 @@ public class FactoryProcessor extends AbstractProcessor {
         for (Element e :
                 roundEnvironment.getElementsAnnotatedWith(Factory.class)) {
             if (e.getKind() != ElementKind.CLASS) {
-                error(e, "Only classes can be annotated with @%s", Factory.class.getSimpleName());
+                GenerateTools.error(messager, e, "Only classes can be annotated with @%s", Factory.class.getSimpleName());
                 return true;
             }
             TypeElement typeElement = (TypeElement) e;
@@ -79,11 +77,11 @@ public class FactoryProcessor extends AbstractProcessor {
                 }
                 factoryGroupedClasses.add(annotatedClass);
             } catch (IllegalArgumentException ex) {
-                error(typeElement, ex.getMessage());
+                GenerateTools.error(messager, typeElement, ex.getMessage());
                 return true;
             } catch (FactoryGroupedClasses.IDAlreadyUsedException ex2) {
                 FactoryAnnotatedClass existing = ex2.getExisting();
-                error(e, "Conflict:The class %s is annotated with @%s with id = '%s' but %s already uses the same id",
+                GenerateTools.error(messager, e, "Conflict:The class %s is annotated with @%s with id = '%s' but %s already uses the same id",
                         typeElement.getQualifiedName().toString(), Factory.class.getSimpleName(),
                         existing.getTypeElement().getQualifiedName().toString());
                 return true;
@@ -96,7 +94,7 @@ public class FactoryProcessor extends AbstractProcessor {
                 factoryClass.generateCode(elementUtils, filer);
             }
         } catch (IOException ioe) {
-            error(null, ioe.getMessage());
+            GenerateTools.error(messager, null, ioe.getMessage());
         }
         factoryClasses.clear();
         return true;
@@ -114,30 +112,26 @@ public class FactoryProcessor extends AbstractProcessor {
         return SourceVersion.latestSupported();
     }
 
-    private void error(Element element, String msg, Object... args) {
-        messager.printMessage(Diagnostic.Kind.ERROR,
-                String.format(msg, args),
-                element);
-    }
 
     private boolean isValidClass(FactoryAnnotatedClass item) {
         //转为TypeElement，含有更多特定方法
         TypeElement classElement = item.getTypeElement();
         if (!classElement.getModifiers().contains(Modifier.PUBLIC)) {
-            error(classElement, "The class %s is not public.", classElement.getQualifiedName().toString());
+            GenerateTools.error(messager, classElement, "The class %s is not public.", classElement.getQualifiedName().toString());
             return false;
         }
         //检查是否是一个抽象类
         if (classElement.getModifiers().contains(Modifier.ABSTRACT)) {
-            error(classElement, "The class $s is abstract. You can't annotate abstract classes with @%",
+            GenerateTools.error(messager, classElement, "The class $s is abstract. You can't annotate abstract classes with @%",
                     classElement.getQualifiedName().toString(), Factory.class.getSimpleName());
+            return false;
         }
         //检查继承关系：必须是@Factory.type()指定的类型子类
         TypeElement superClassElement = elementUtils.getTypeElement(item.getQualifiedFactoryGroupName());
         if (superClassElement.getKind() == ElementKind.INTERFACE) {
             //检查接口是否实现了
             if (!classElement.getInterfaces().contains(superClassElement.asType())) {
-                error(classElement, "The class %s annotated with @%s must implement the interface %s",
+                GenerateTools.error(messager, classElement, "The class %s annotated with @%s must implement the interface %s",
                         classElement.getQualifiedName().toString(), Factory.class.getSimpleName());
                 return false;
             }
@@ -148,7 +142,7 @@ public class FactoryProcessor extends AbstractProcessor {
                 TypeMirror superClassType = currentClass.getSuperclass();
                 if (superClassType.getKind() == TypeKind.NONE) {
                     //已经到达基本类型object，退出，没有找到符合的父类
-                    error(classElement, "The class %s annotated with @%s must inherit from %s", classElement.getQualifiedName().toString(),
+                    GenerateTools.error(messager, classElement, "The class %s annotated with @%s must inherit from %s", classElement.getQualifiedName().toString(),
                             Factory.class.getSimpleName(), item.getQualifiedFactoryGroupName());
                     return false;
                 }
@@ -173,7 +167,7 @@ public class FactoryProcessor extends AbstractProcessor {
             }
         }
         //没有找到默认构造函数
-        error(classElement, "The class %s must provide an public empty default constructor", classElement.getQualifiedName().toString());
+        GenerateTools.error(messager, classElement, "The class %s must provide an public empty default constructor", classElement.getQualifiedName().toString());
         return false;
     }
 

@@ -33,22 +33,22 @@ public class FactoryAnnotatedClass {
         }
     }
 
-    //è·å–@Factory#id()ä¸­çš„id
+    //»ñÈ¡@Factory#id()ÖĞµÄid
     public String getId() {
         return id;
     }
 
-    //è·å–åœ¨@Factory#type()æŒ‡å®šçš„ç±»å‹çš„åˆæ³•å…¨å
+    //»ñÈ¡ÔÚ@Factory#type()Ö¸¶¨µÄÀàĞÍµÄºÏ·¨È«Ãû
     public String getQualifiedFactoryGroupName() {
         return qualifiedSuperClassName;
     }
 
-    //è·å–åœ¨@Factory#type()æŒ‡å®šçš„ç±»å‹çš„åå­—
+    //»ñÈ¡ÔÚ@Factory#type()Ö¸¶¨µÄÀàĞÍµÄÃû×Ö
     public String getSimpleFactoryGroupName() {
         return simpleTypeName;
     }
 
-    //è·å–è¢«@Factoryæ³¨è§£çš„åŸå§‹å…ƒç´ 
+    //»ñÈ¡±»@Factory×¢½âµÄÔ­Ê¼ÔªËØ
     public TypeElement getTypeElement() {
         return annotatedClassElement;
     }
