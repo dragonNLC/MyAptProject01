@@ -31,6 +31,7 @@ public class MainProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        System.out.println("process");
         messager = processingEnv.getMessager();
         elements = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
